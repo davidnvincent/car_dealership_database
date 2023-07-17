@@ -1,0 +1,180 @@
+David Vincent 
+Final Assignment
+
+Part One in separate file
+
+Part Two
+
+create table if not exists Lots (
+   l_id int primary key auto_increment not null,
+   name varchar(50) unique not null
+);
+
+create table if not exists Cars (
+   c_id int primary key auto_increment not null,
+   l_id int,
+   foreign key (l_id) references Lots (l_id),
+   car_type varchar(50) not null,
+   year year not null,
+   color varchar(50) not null,
+   price int not null
+);
+
+create table if not exists Positions (
+   title varchar(50) primary key not null,
+   commission tinyint not null
+);
+
+create table if not exists Salespeople (
+   sp_id int primary key auto_increment not null,
+   title varchar(50) not null,
+   foreign key (title) references Positions (title)
+);
+
+create table if not exists Sales (
+   s_id int primary key auto_increment not null,
+   c_id int not null,
+   foreign key (c_id) references Cars (c_id),
+   sale_price bigint not null,
+   customer_name varchar(50) not null,
+   customer_address varchar(100) not null,
+   customer_phone_num bigint not null,
+   year_purchased year not null,
+   sp_id int not null,
+   foreign key (sp_id) references Salespeople (sp_id),
+	unique (c_id)
+);
+
+Part Three
+1. Selling a car (this will take multiple statements).
+
+insert into Sales (c_id, sale_price, customer_name, customer_address, customer_phone_num, year_purchased, sp_id) 
+   values (1, "3000", "Rami Malek", "123 Rami St.", 3030010001, 2021, 1);
+update Cars set l_id = NULL where c_id = 1;
+
+
+2. Obtaining all cars purchased since 2012 by a customer named "Rami Malek".
+
+select * from sales where customer_name = 'Rami Malek' and year_purchased >= 2012;
+
+
+3. Obtaining the average sale price of cars for Junior Salespeople, Senior Salespeople, and Managers. Sort your groups by average sale price.
+
+select title, avg(sale_price) as average_sale_price from sales s join salespeople sp where s.sp_id=sp.sp_id group by title;
+
+
+Part Four
+Collections:
+
+Lots
+{
+    _id: ObjectId("62294dfd09f857e8f28b642b"),
+    l_id: 1,
+    name: 'North Lot'
+}
+
+Cars
+{
+    _id: ObjectId("62294f377101dd9d99e5a453"),
+    c_id: 1,
+    l_id: 1,
+    car_type: 'Subaru Outback',
+    year: 2004,
+    color: 'blue',
+    price: 3000
+}
+
+Positions
+{
+    _id: ObjectId("622950cceb6de3d4f791c540"),
+    title: 'junior',
+    commission: 20
+}
+
+Salespeople
+{
+    _id: ObjectId("622950e0d83916d3631f0d3f"),
+    sp_id: 1,
+    title: 'junior'
+}
+
+Sales
+{
+    _id: ObjectId("622950e93c773cd5b3af12e0"),
+    s_id: 1,
+    c_id: 1,
+    sale_price: 2000,
+    customer_name: 'David',
+    customer_address: '123 David St.',
+    customer_phone: 1231231234,
+    year_purchased: 2022,
+    sp_id: 1
+}
+
+Part Five
+1. Selling a car (this will take multiple statements)
+
+db.Sales.insertOne( { s_id:2, c_id:2, sale_price:500, customer_name: "Rami Malek", customer_address:"123 Malek St.", customer_phone:3031231234, year_purchased:2022, sp_id:1 } ) 
+db.Cars.updateOne( { c_id: 2 }, { $set: { l_id : null } } )
+
+2. Obtaining all cars purchased since 2012 by a customer named "Rami Malek"
+
+db.Sales.aggregate ([
+{
+   $match: { customer_name: "Rami Malek", year_purchased : { $gte : 2012 } }
+},
+{
+   $lookup:
+      {
+         from: "Cars",
+         localField: "c_id",
+         foreignField: "c_id",
+	 	   as: "car_info"
+      }
+}
+])
+
+3. Obtaining the average sale price of cars for Junior Salespeople, Senior Salespeople, and Managers. Sort your groups by average sale price.
+
+db.SalesPeople.aggregate ([
+{
+   $lookup:
+      {
+         from: "Sales",
+         localField: "sp_id",
+         foreignField: "sp_id",
+         as: "sales"
+     }
+},
+{
+   $unwind: "$sales"
+},
+{ 
+   $group: 
+	{ 
+         _id: "$title", avgSalePrice: { $avg: "$sales.sale_price" } 
+	}
+}
+])
+
+Part Six
+1. Provide a SELECT query that will return the name of each Person who owns more than one Franchise.
+
+select p.name from Person p join Owns o using(p_id) group by 1 having count(*) > 1;
+
+
+2. Provide a SELECT query that will return all Franchises that have a Menu Item named "Shrimp and Grits" on one of its Menus.
+
+select f.* from franchise f join menu_item mi using(menu_id) where where mi.name="Shrimp and Grits";
+
+
+3. Provide a SELECT query that will return the ID and Address of each Franchise that honors a Coupon that discounts a Menu Item with the Name "Truffle Fries" and a Coupon Price less than $5.
+
+select f.id, f.address from franchise f join coupon c using(coupon_id) join discounts d using(discounts_id) where d.item_name = "Truffle Fries" and c.price < 5
+
+
+4. Provide a SELECT query that will return each Menu Item along with the Address of the Franchise the honors the lowest price Coupon that discounts the Menu Item.
+
+
+select min(c.price), d.item_name, f.address from franchise f join coupon c using(coupon_id) join discounts d using(discounts_id) group by 2;
+

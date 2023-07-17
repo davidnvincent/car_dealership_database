@@ -1,0 +1,5 @@
+c_id, l_id, car_type, year, color, price
+1, 1, "Subaru Outback", 2004, "blue", 3000
+2, 1, "Volkswagon Jetta", 2011, "toffee brown", 5000
+3, 2, "Honda CR-V", 2011, "brown", 10000
+4, 2, "Honda Pilot", 2007, "green", 7000
